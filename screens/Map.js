@@ -1,42 +1,63 @@
-import React, { useState, useRef } from 'react';
-import { View, StyleSheet, Button, SafeAreaView, Text, Modal, TouchableOpacity } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+} from "react-native";
+import MapView, { Marker, Callout } from "react-native-maps";
+import * as Location from "expo-location";
+import { Ionicons } from "@expo/vector-icons"; // Ensure you have @expo/vector-icons installed
+import Api from "../api";
+import FastImage from "react-native-fast-image";
+
+const CustomButton = ({ title, icon, onPress, color }) => (
+  <TouchableOpacity
+    style={[styles.customButton, { backgroundColor: color }]}
+    onPress={onPress}
+  >
+    <Ionicons name={icon} size={24} color="white" />
+    <Text style={styles.buttonText}>{title}</Text>
+  </TouchableOpacity>
+);
 
 const MapPage = ({ navigation }) => {
-  const [marker, setMarker] = useState(null);
+  const [markers, setMarker] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const mapRef = useRef(null);
 
-  const handleMapPress = (e) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    setMarker({
-      coordinate: e.nativeEvent.coordinate,
-      title: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
-      description: 'Marker Description',
-    });
-  };
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
 
   const requestLocationPermission = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Permission to access location was denied');
+    if (status !== "granted") {
+      setModalVisible(true);
       return;
     }
-
     let location = await Location.getCurrentPositionAsync({});
     setUserLocation(location.coords);
     centerMapOnLocation(location.coords);
   };
 
   const centerMapOnLocation = (location) => {
-    mapRef.current.animateToRegion({
-      latitude: location.latitude,
-      longitude: location.longitude,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0421,
-    }, 1000);
+    mapRef.current.animateToRegion(
+      {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      },
+      1000
+    );
   };
 
   const handleRecenterPress = () => {
@@ -47,21 +68,79 @@ const MapPage = ({ navigation }) => {
     }
   };
 
+  const fetchMarkersDataPlacesToClean = async () => {
+    setIsLoading(true);
+    try {
+      const response = await Api.get("/garbagesPlaces");
+      setMarker(response.data);
+    } catch (error) {
+      console.log("Error fetching marker info:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchMarkersDataEvents = async () => {
+    setIsLoading(true);
+    try {
+      const response = await Api.get("/events");
+      setMarker(response.data);
+    } catch (error) {
+      console.log("Error fetching marker info:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mapContainer}>
-        <MapView 
-          ref={mapRef}
-          style={styles.map} 
-          onPress={handleMapPress}
-        >
-          {marker && (
-            <Marker
-              coordinate={marker.coordinate}
-              title={marker.title}
-              description={marker.description}
-            />
-          )}
+        <MapView ref={mapRef} style={styles.map}>
+          {Array.isArray(markers) && markers.length !== 0
+            ? markers.map((marker, index) => {
+                console.log("Marker Image URL:", marker.photo); // Log the image URL
+                return (
+                  <Marker
+                    key={index}
+                    coordinate={{
+                      latitude: parseFloat(marker.position.lat),
+                      longitude: parseFloat(marker.position.long),
+                    }}
+                    title={marker.name || "Unnamed Marker"}
+                    description={
+                      marker.description || "No description available"
+                    }
+                  >
+                    <Callout tooltip style={styles.customCallout}>
+                      <View style={styles.calloutContainer}>
+                        <Text style={styles.calloutTitle}>
+                          {marker.name || "Unnamed Marker"}
+                        </Text>
+                        <Text style={styles.calloutDescription}>
+                          {marker.description || "No description available"}
+                        </Text>
+                        {marker.photo ? (
+                          <Image
+                            source={{ uri: marker.photo }}
+                            style={styles.calloutImage}
+                            resizeMode="cover"
+                            onError={(e) =>
+                              console.error(
+                                "Image load error:",
+                                e.nativeEvent.error
+                              )
+                            } // Log image load errors
+                          />
+                        ) : (
+                          <Text>No image available</Text>
+                        )}
+                      </View>
+                    </Callout>
+                  </Marker>
+                );
+              })
+            : null}
+
           {userLocation && (
             <Marker
               coordinate={userLocation}
@@ -71,10 +150,40 @@ const MapPage = ({ navigation }) => {
           )}
         </MapView>
       </View>
-      <View style={styles.buttonContainer}>
-        <Button title="Back to User" onPress={() => navigation.goBack()} />
-        <Button title="Recenter Map" onPress={handleRecenterPress} />
-      </View>
+      <ScrollView horizontal style={styles.buttonScrollView}>
+        <CustomButton
+          title="Profile"
+          icon="person-outline"
+          onPress={() => navigation.navigate("User")}
+          color="#4A90E2"
+        />
+        <CustomButton
+          title="Recenter"
+          icon="locate-outline"
+          onPress={handleRecenterPress}
+          color="#50C878"
+        />
+        <CustomButton
+          title="Dirty Places"
+          icon="trash-outline"
+          onPress={fetchMarkersDataPlacesToClean}
+          color="#FF6347"
+        />
+        <CustomButton
+          title="Events"
+          icon="calendar-outline"
+          onPress={fetchMarkersDataEvents}
+          color="#FFD700"
+        />
+        <CustomButton
+          title="Reset"
+          icon="refresh-outline"
+          onPress={() => setMarker(null)}
+          color="#8A2BE2"
+        />
+      </ScrollView>
+
+      {isLoading && <ActivityIndicator size="large" color="#0000ff" />}
 
       <Modal
         animationType="slide"
@@ -119,16 +228,30 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  buttonScrollView: {
+    flexGrow: 0,
+    paddingVertical: 10,
+    backgroundColor: "#21808D",
+  },
+  customButton: {
+    flexDirection: "row",
+    alignItems: "center",
     padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 20,
+    minWidth: 100,
+    justifyContent: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    marginLeft: 5,
   },
   centeredView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 22
+    marginTop: 22,
   },
   modalView: {
     margin: 20,
@@ -139,16 +262,16 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2
+      height: 2,
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 5
+    elevation: 5,
   },
   button: {
     borderRadius: 20,
     padding: 10,
-    elevation: 2
+    elevation: 2,
   },
   buttonOpen: {
     backgroundColor: "#F194FF",
@@ -159,17 +282,42 @@ const styles = StyleSheet.create({
   textStyle: {
     color: "white",
     fontWeight: "bold",
-    textAlign: "center"
+    textAlign: "center",
   },
   modalText: {
     marginBottom: 15,
-    textAlign: "center"
+    textAlign: "center",
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  }
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  calloutContainer: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 10,
+    width: "100%",
+    height: "100%",
+  },
+  calloutTitle: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  calloutDescription: {
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  calloutImage: {
+    width: 150, // Ensure width is set
+    height: 100, // Ensure height is set
+    borderRadius: 5,
+  },
+  customCallout: {
+    width: 200,
+    height: 200,
+  },
 });
 
 export default MapPage;
