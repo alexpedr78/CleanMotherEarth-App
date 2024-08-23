@@ -5,24 +5,19 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
+  ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import Api from "../api";
 import * as ImagePicker from "expo-image-picker";
+import Api from "../api";
 
-function UpdateProfilButton({
-  reloadInfos,
-  updateForm,
-  setReloadInfos,
-  userDetail,
-  setUpdateForm,
-}) {
+function SignupPage() {
   const [formState, setFormState] = useState({
-    email: userDetail.email,
-    name: userDetail.name,
-    pseudo: userDetail.pseudo,
-    file: userDetail.avatar,
+    email: "",
+    password: "",
+    name: "",
+    pseudo: "",
+    file: "",
   });
   const [error, setError] = useState("");
   const navigation = useNavigation();
@@ -33,8 +28,13 @@ function UpdateProfilButton({
       [id]: value,
     }));
   };
-
   const handleFileChange = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      alert("Sorry, we need camera roll permissions to make this work!");
+      return;
+    }
+
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -42,106 +42,127 @@ function UpdateProfilButton({
       quality: 1,
     });
 
-    if (!result.cancelled) {
+    console.log("ImagePicker result:", result); // Log the entire result
+
+    if (!result.canceled) {
+      // Access the URI from the first asset
+      const uri = result.assets[0].uri;
+      console.log("Selected file URI:", uri); // Log the URI
+
       setFormState((prevState) => ({
         ...prevState,
-        file: result.uri,
+        file: uri,
       }));
+    } else {
+      console.log("Image selection was cancelled.");
     }
-  };
-
-  const handleCancel = () => {
-    setUpdateForm(!updateForm);
   };
 
   const handleSubmit = async () => {
     try {
-      let formData = new FormData();
-      formData.append("email", formState.email);
-      formData.append("name", formState.name);
-      formData.append("pseudo", formState.pseudo);
-      if (formState.file) {
+      const { email, password, name, pseudo, file } = formState;
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("name", name);
+      formData.append("pseudo", pseudo);
+      if (file) {
         formData.append("avatar", {
-          uri: formState.file,
-          type: "image/jpeg", // Ensure this matches the file type
+          uri: file,
+          type: "image/jpeg",
           name: "avatar.jpg",
         });
       }
 
-      const response = await Api.put("/users", formData, {
+      console.log("Sending signup request...");
+      const response = await Api.post("/auth/signup", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
       console.log("Response received:", response);
-      if (response.status === 200 || response.status === 201) {
-        navigation.navigate("User");
-        setUpdateForm(!updateForm);
-        setReloadInfos(!reloadInfos);
+
+      if (response.status === 201) {
+        navigation.navigate("Login");
       }
     } catch (error) {
-      console.error("Update error:", error.message);
-      console.error("Error details:", error.response?.data);
+      console.error("Signup error:", error.message);
       setError(error.response?.data?.message || "An error occurred.");
       setTimeout(() => {
         setError("");
       }, 2000);
     }
   };
-
-  const { email, name, pseudo, file } = formState;
-
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Update your account</Text>
+        <Text style={styles.title}>Sign up for your account</Text>
         {error && <Text style={styles.errorText}>{error}</Text>}
 
         <TextInput
           style={styles.input}
           placeholder="Email address"
-          value={email}
+          value={formState.email}
           onChangeText={(value) => handleChange("email", value)}
           keyboardType="email-address"
         />
         <TextInput
           style={styles.input}
+          placeholder="Password"
+          value={formState.password}
+          onChangeText={(value) => handleChange("password", value)}
+          secureTextEntry
+        />
+        <TextInput
+          style={styles.input}
           placeholder="Name"
-          value={name}
+          value={formState.name}
           onChangeText={(value) => handleChange("name", value)}
         />
         <TextInput
           style={styles.input}
           placeholder="Pseudo"
-          value={pseudo}
+          value={formState.pseudo}
           onChangeText={(value) => handleChange("pseudo", value)}
         />
         <TouchableOpacity style={styles.fileButton} onPress={handleFileChange}>
           <Text style={styles.fileButtonText}>Choose Avatar</Text>
         </TouchableOpacity>
-        {file && <Image source={{ uri: file }} style={styles.avatar} />}
 
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Update your Infos</Text>
+          <Text style={styles.submitButtonText}>Sign up</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+
+        <Text style={styles.loginText}>
+          Already have an account?{" "}
+          <Text
+            style={styles.loginLink}
+            onPress={() => navigation.navigate("Login")}
+          >
+            Log in
+          </Text>
+        </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center",
     padding: 20,
+    backgroundColor: "#f5f5f5",
   },
   formContainer: {
-    width: "100%",
-    maxWidth: 400,
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   title: {
     fontSize: 24,
@@ -171,34 +192,25 @@ const styles = StyleSheet.create({
   fileButtonText: {
     textAlign: "center",
   },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignSelf: "center",
-    marginBottom: 10,
-  },
   submitButton: {
     backgroundColor: "#4F46E5",
-    padding: 10,
+    padding: 15,
     borderRadius: 6,
-    marginBottom: 10,
+    marginTop: 10,
   },
   submitButtonText: {
     color: "white",
     textAlign: "center",
     fontWeight: "bold",
   },
-  cancelButton: {
-    backgroundColor: "#8B5CF6",
-    padding: 10,
-    borderRadius: 6,
-  },
-  cancelButtonText: {
-    color: "white",
+  loginText: {
     textAlign: "center",
+    marginTop: 20,
+  },
+  loginLink: {
+    color: "#4F46E5",
     fontWeight: "bold",
   },
 });
 
-export default UpdateProfilButton;
+export default SignupPage;

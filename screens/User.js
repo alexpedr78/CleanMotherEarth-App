@@ -13,6 +13,7 @@ import Api from "../api.js";
 import { useAuth } from "../context/AuthContextWrapper.js";
 import UpdateProfilButton from "../components/UpdateProfile.js";
 import SelectProfilePage from "../components/SelectProfilePage.js";
+import LogoutComponent from "../components/LogoutButton.js";
 
 function ProfilePage() {
   const { logout } = useAuth();
@@ -40,7 +41,7 @@ function ProfilePage() {
     try {
       await Api.delete("/users", userDetail._id);
       logout();
-      navigation.navigate("Home");
+      navigation.navigate("Login");
     } catch (error) {
       console.log(error);
     }
@@ -54,9 +55,14 @@ function ProfilePage() {
     navigation.navigate("Dashboard");
   }
 
+  if (!userDetail) {
+    return <Text>Loading...</Text>;
+  }
+
   const renderProfileContent = () => (
     <View style={styles.content}>
       <View style={styles.card}>
+        <LogoutComponent />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Your ID Card</Text>
           <Text style={styles.headerSubtitle}>
@@ -75,7 +81,7 @@ function ProfilePage() {
         {userDetail.role === "admin" && (
           <TouchableOpacity
             style={styles.dashboardButton}
-            onPress={handleDashboard}
+            onPress={() => navigation.navigate("Dashboard")}
           >
             <Text style={styles.buttonText}>Go to Dashboard</Text>
           </TouchableOpacity>
@@ -106,7 +112,19 @@ function ProfilePage() {
   return (
     <FlatList
       data={[{ key: "profile" }]}
-      renderItem={renderProfileContent}
+      renderItem={
+        updateForm
+          ? () => (
+              <UpdateProfilButton
+                reloadInfos={reloadInfos}
+                updateForm={updateForm}
+                setReloadInfos={setReloadInfos}
+                userDetail={userDetail}
+                setUpdateForm={setUpdateForm}
+              />
+            )
+          : renderProfileContent
+      }
       keyExtractor={(item) => item.key}
       ListFooterComponent={() => (
         <Modal

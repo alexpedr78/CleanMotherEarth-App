@@ -12,9 +12,10 @@ import {
 } from "react-native";
 import MapView, { Marker, Callout } from "react-native-maps";
 import * as Location from "expo-location";
-import { Ionicons } from "@expo/vector-icons"; // Ensure you have @expo/vector-icons installed
+import { Ionicons } from "@expo/vector-icons";
 import Api from "../api";
-import FastImage from "react-native-fast-image";
+import FormPlaceAppPage from "../components/AddNewMarker";
+import GoToOnePlaceButton from "../components/GoToOnePlaceButton";
 
 const CustomButton = ({ title, icon, onPress, color }) => (
   <TouchableOpacity
@@ -31,6 +32,10 @@ const MapPage = ({ navigation }) => {
   const [userLocation, setUserLocation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false); // State for form visibility
+  const [clickedPosition, setClickedPosition] = useState(null); // State for clicked position
+  const [temporaryMarker, setTemporaryMarker] = useState(null);
+
   const mapRef = useRef(null);
 
   useEffect(() => {
@@ -68,6 +73,13 @@ const MapPage = ({ navigation }) => {
     }
   };
 
+  const handleMapPress = (event) => {
+    setClickedPosition(event.nativeEvent.coordinate);
+    setShowForm(!showForm);
+    setTemporaryMarker(event.nativeEvent.coordinate);
+    console.log(clickedPosition);
+  };
+
   const fetchMarkersDataPlacesToClean = async () => {
     setIsLoading(true);
     try {
@@ -95,10 +107,9 @@ const MapPage = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mapContainer}>
-        <MapView ref={mapRef} style={styles.map}>
+        <MapView ref={mapRef} style={styles.map} onPress={handleMapPress}>
           {Array.isArray(markers) && markers.length !== 0
             ? markers.map((marker, index) => {
-                console.log("Marker Image URL:", marker.photo); // Log the image URL
                 return (
                   <Marker
                     key={index}
@@ -111,7 +122,8 @@ const MapPage = ({ navigation }) => {
                       marker.description || "No description available"
                     }
                   >
-                    <Callout tooltip style={styles.customCallout}>
+                    <Callout tappable>
+                      {/* tooltip style={styles.customCallout} */}
                       <View style={styles.calloutContainer}>
                         <Text style={styles.calloutTitle}>
                           {marker.name || "Unnamed Marker"}
@@ -119,21 +131,10 @@ const MapPage = ({ navigation }) => {
                         <Text style={styles.calloutDescription}>
                           {marker.description || "No description available"}
                         </Text>
-                        {marker.photo ? (
-                          <Image
-                            source={{ uri: marker.photo }}
-                            style={styles.calloutImage}
-                            resizeMode="cover"
-                            onError={(e) =>
-                              console.error(
-                                "Image load error:",
-                                e.nativeEvent.error
-                              )
-                            } // Log image load errors
-                          />
-                        ) : (
-                          <Text>No image available</Text>
-                        )}
+                        <Text style={styles.calloutDescription}>
+                          {marker._id || "No description available"}
+                        </Text>
+                        <GoToOnePlaceButton markerId={marker._id} />
                       </View>
                     </Callout>
                   </Marker>
@@ -148,15 +149,31 @@ const MapPage = ({ navigation }) => {
               pinColor="blue"
             />
           )}
+          {temporaryMarker && showForm && (
+            <Marker
+              coordinate={temporaryMarker}
+              pinColor="pink" // Different color for the temporary marker
+            />
+          )}
         </MapView>
+        {showForm && (
+          <FormPlaceAppPage
+            setShowForm={setShowForm}
+            showForm={showForm}
+            clickedPosition={clickedPosition}
+          />
+        )}
+
+        {isLoading && <ActivityIndicator size="large" color="#0000ff" />}
       </View>
+      <TouchableOpacity
+        style={styles.profileButton}
+        onPress={() => navigation.navigate("User")}
+      >
+        <Ionicons name="person-circle-outline" size={30} color="white" />
+      </TouchableOpacity>
+
       <ScrollView horizontal style={styles.buttonScrollView}>
-        <CustomButton
-          title="Profile"
-          icon="person-outline"
-          onPress={() => navigation.navigate("User")}
-          color="#4A90E2"
-        />
         <CustomButton
           title="Recenter"
           icon="locate-outline"
@@ -310,13 +327,35 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   calloutImage: {
-    width: 150, // Ensure width is set
-    height: 100, // Ensure height is set
+    width: 150,
+    height: 100,
     borderRadius: 5,
   },
   customCallout: {
     width: 200,
     height: 200,
+  },
+  profileButton: {
+    position: "absolute",
+    top: 30,
+    right: 10,
+    backgroundColor: "#4A90E2",
+    padding: 10,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1, // Ensure the button is on top
+  },
+  addMarkerButton: {
+    position: "absolute",
+    top: 60,
+    right: 10,
+    backgroundColor: "#4A90E2",
+    padding: 10,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1, // Ensure the button is on top
   },
 });
 
