@@ -22,6 +22,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const storeUser = async (id) => {
+    try {
+      await AsyncStorage.setItem("currentUser", id);
+    } catch (error) {
+      console.error("Error storing current user:", error);
+    }
+  };
+
   const removeToken = async () => {
     try {
       await AsyncStorage.removeItem("token");
@@ -59,8 +67,9 @@ export const AuthProvider = ({ children }) => {
       console.log("Attempting login with:", { pseudo, password });
       const response = await Api.post("/auth/login", { pseudo, password });
       console.log("Login response:", response.data);
-      const { authToken } = response.data;
+      const { authToken, id } = response.data;
       await storeToken(authToken);
+      await storeUser(id);
       await authenticateUser();
       return true;
     } catch (error) {

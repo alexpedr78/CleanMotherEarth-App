@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
+  Button,
   ScrollView,
 } from "react-native";
 import MapView, { Marker, Callout } from "react-native-maps";
@@ -15,7 +17,6 @@ import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import Api from "../api";
 import FormPlaceAppPage from "../components/AddNewMarker";
-import GoToOnePlaceButton from "../components/GoToOnePlaceButton";
 
 const CustomButton = ({ title, icon, onPress, color }) => (
   <TouchableOpacity
@@ -104,6 +105,11 @@ const MapPage = ({ navigation }) => {
     }
   };
 
+  const handleAddAnEvent = (markerId) => {
+    console.log("Navigating to OnePlacePage with markerId:", markerId);
+    navigation.navigate("OnePlacePage", { markerId });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mapContainer}>
@@ -117,13 +123,10 @@ const MapPage = ({ navigation }) => {
                       latitude: parseFloat(marker.position.lat),
                       longitude: parseFloat(marker.position.long),
                     }}
-                    title={marker.name || "Unnamed Marker"}
-                    description={
-                      marker.description || "No description available"
-                    }
+                    onCalloutPress={() => handleAddAnEvent(marker._id)}
                   >
-                    <Callout tappable>
-                      {/* tooltip style={styles.customCallout} */}
+                    <Callout tappable tooltip>
+                      {/*  style={styles.customCallout} */}
                       <View style={styles.calloutContainer}>
                         <Text style={styles.calloutTitle}>
                           {marker.name || "Unnamed Marker"}
@@ -134,7 +137,7 @@ const MapPage = ({ navigation }) => {
                         <Text style={styles.calloutDescription}>
                           {marker._id || "No description available"}
                         </Text>
-                        <GoToOnePlaceButton markerId={marker._id} />
+                        <Button title="show details" key={index}></Button>
                       </View>
                     </Callout>
                   </Marker>
