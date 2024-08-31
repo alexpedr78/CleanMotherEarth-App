@@ -8,6 +8,8 @@ import ProfilePage from "./screens/User.js";
 import SignupPage from "./screens/Signup.js";
 import DashboardPage from "./screens/Dashboard.js";
 import OnePlacePage from "./screens/OnePlacePage.js";
+import OneEventPage from "./screens/OneEventPage.js";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 const Stack = createNativeStackNavigator();
 
 function AppNavigator() {
@@ -30,6 +32,7 @@ function AppNavigator() {
         <Stack.Screen name="User" component={ProfilePage} />
         <Stack.Screen name="Dashboard" component={DashboardPage} />
         <Stack.Screen name="OnePlacePage" component={OnePlacePage} />
+        <Stack.Screen name="OneEventPage" component={OneEventPage} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -37,8 +40,10 @@ function AppNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppNavigator />
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

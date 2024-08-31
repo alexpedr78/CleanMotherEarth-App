@@ -35,8 +35,7 @@ function FormPlaceAppPage({ setShowForm, showForm, clickedPosition }) {
 
     if (!result.cancelled) {
       const uri = result.assets[0].uri;
-      console.log("Selected file URI:", uri); // Log the URI
-
+      console.log("Selected file URI:", uri);
       setFormData({
         ...formData,
         photo: uri,

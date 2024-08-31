@@ -6,66 +6,63 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  Button,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import Api from "../api";
-import AddAnEvent from "../components/AddAnEventButton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TouchableOpacity } from "react-native-gesture-handler";
 
-const OnePlacePage = ({ navigation }) => {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [placeDetails, setPlaceDetails] = useState(null);
-  const [isThereEvents, setIsThereEvents] = useState(null);
+const OneEventPage = ({ navigation }) => {
+  const [eventDetails, setEventDetails] = useState(null);
+  const [placeAbout, setPlaceAbout] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState("");
   const route = useRoute();
   const { markerId } = route.params;
 
   useEffect(() => {
-    fetchPlaceDetails();
+    fetchEventDetails();
     fetchUserId();
-  }, [refreshKey]);
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      console.log("Current User:", currentUser);
+    }
+  }, [currentUser]);
 
   const fetchUserId = async () => {
     try {
       const userId = await AsyncStorage.getItem("currentUser");
       if (userId) {
         setCurrentUser(userId);
+        console.log(currentUser);
       }
     } catch (error) {
       console.error("Error fetching user ID:", error);
     }
   };
 
-  const fetchPlaceDetails = async () => {
+  const fetchEventDetails = async () => {
     try {
-      const response = await Api.get(`/garbagesPlaces/${markerId}`);
-      setPlaceDetails(response.data);
-      console.log("datafromtheplace:", response.data);
-      const response2 = await Api.get(`/events/place/${markerId}`);
-      console.log("event:", response2.data);
-
-      setIsThereEvents(response2.data);
+      const response = await Api.get(`/events/${markerId}`);
+      const eventData = response.data;
+      setEventDetails(eventData);
+      console.log("datafromtheevent:", eventData);
+      if (eventData !== null && eventData.place) {
+        const response2 = await Api.get(`/garbagesPlaces/${eventData.place}`);
+        console.log("place details:", response2.data);
+        setPlaceAbout(response2.data);
+      } else {
+        console.error("Event data does not contain place information.");
+      }
     } catch (error) {
-      console.error("Error fetching place details:", error);
+      console.error("Error fetching event or place details:", error);
     } finally {
       setLoading(false);
     }
   };
-
-  const formatEventTime = (dateString) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "long",
-      day: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    }).format(date);
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -74,7 +71,7 @@ const OnePlacePage = ({ navigation }) => {
     );
   }
 
-  if (!placeDetails) {
+  if (!eventDetails) {
     return (
       <View style={styles.container}>
         <Text style={styles.noDetailsText}>
@@ -87,37 +84,25 @@ const OnePlacePage = ({ navigation }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.eventBox}>
-        <Text style={styles.title}>{placeDetails.name}</Text>
-        {placeDetails.photo && (
-          <Image source={{ uri: placeDetails.photo }} style={styles.image} />
+        <Text style={styles.title}>{eventDetails.name}</Text>
+        {eventDetails.photo && (
+          <Image source={{ uri: eventDetails.photo }} style={styles.image} />
         )}
-        <Text style={styles.description}>{placeDetails.description}</Text>
-        <Text style={styles.address}>Address: {placeDetails.address}</Text>
+        <Text style={styles.description}>{eventDetails.description}</Text>
+        <Text style={styles.address}>Address: {eventDetails.address}</Text>
       </View>
-      <Text style={styles.eventText}>
-        Event about this place:{" "}
-        {isThereEvents.length > 0 ? "" : "No events found"}
-      </Text>
-      {isThereEvents.map((event, index) => (
-        <TouchableOpacity
-          key={index}
-          style={styles.eventBox}
-          onPress={() =>
-            navigation.navigate("OneEventPage", { markerId: event._id })
-          }
-        >
-          <Text style={styles.eventName}>{event.name}</Text>
-          <Text style={styles.eventPosition}>{event.position.long}</Text>
-          <Text style={styles.eventDescription}>{event.description}</Text>
-          <Text style>{formatEventTime(event.timeStart)}</Text>
-        </TouchableOpacity>
-      ))}
-      <AddAnEvent
-        setRefreshKey={setRefreshKey}
-        markerId={markerId}
-        placeInfos={placeDetails}
-        currentUser={currentUser}
-      ></AddAnEvent>
+      <Text>This Event is about this place: </Text>
+      <TouchableOpacity
+        style={styles.eventBox}
+        onPress={() =>
+          navigation.navigate("OnePlacePage", { markerId: placeAbout._id })
+        }
+      >
+        <Text>{placeAbout !== null ? placeAbout.name : ""}</Text>
+        {placeAbout.photo && (
+          <Image source={{ uri: placeAbout.photo }} style={styles.image2} />
+        )}
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -147,6 +132,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderRadius: 15,
   },
+  image2: {
+    width: "50%",
+    height: 150,
+    resizeMode: "cover",
+    marginBottom: 15,
+    borderRadius: 15,
+  },
+
   description: {
     fontSize: 18,
     color: "#555",
@@ -193,4 +186,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OnePlacePage;
+export default OneEventPage;

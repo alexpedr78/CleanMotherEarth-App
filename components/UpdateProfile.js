@@ -63,7 +63,7 @@ function UpdateProfilButton({
       if (formState.file) {
         formData.append("avatar", {
           uri: formState.file,
-          type: "image/jpeg", // Ensure this matches the file type
+          type: "image/jpeg",
           name: "avatar.jpg",
         });
       }

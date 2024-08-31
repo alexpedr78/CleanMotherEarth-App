@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import Api from "../api";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-function AddAnEvent({ placeInfos, markerId, currentUser }) {
+function AddAnEvent({ setRefreshKey, placeInfos, markerId, currentUser }) {
   const navigation = useNavigation();
   const [addEventForm, setAddEventForm] = useState(false);
   const [formState, setFormState] = useState({
@@ -43,9 +43,11 @@ function AddAnEvent({ placeInfos, markerId, currentUser }) {
     });
 
     if (!result.cancelled) {
+      const uri = result.assets[0].uri;
+      console.log("Selected file URI:", uri);
       setFormState((prevState) => ({
         ...prevState,
-        avatar: result.uri,
+        avatar: uri,
       }));
     }
   };
@@ -95,13 +97,20 @@ function AddAnEvent({ placeInfos, markerId, currentUser }) {
           name: "avatar.jpg",
         });
       }
-      console.log(formData);
+      console.log("new event data", formData);
       const response = await Api.post("/events", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
       setAddEventForm(false);
+      setFormState({
+        name: "",
+        avatar: null,
+        description: "",
+        timeStart: new Date(),
+      });
+      setRefreshKey((prevKey) => prevKey + 1);
     } catch (error) {
       Alert.alert("Error", "An error occurred while creating the event.");
       console.error("Error:", error);
@@ -201,6 +210,10 @@ const styles = StyleSheet.create({
   },
   form: {
     marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 15,
   },
   label: {
     fontSize: 16,

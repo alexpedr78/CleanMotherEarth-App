@@ -29,12 +29,13 @@ const CustomButton = ({ title, icon, onPress, color }) => (
 );
 
 const MapPage = ({ navigation }) => {
+  const [typeOfMarker, setTypeOfMarker] = useState(null);
   const [markers, setMarker] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false); // State for form visibility
-  const [clickedPosition, setClickedPosition] = useState(null); // State for clicked position
+  const [showForm, setShowForm] = useState(false);
+  const [clickedPosition, setClickedPosition] = useState(null);
   const [temporaryMarker, setTemporaryMarker] = useState(null);
 
   const mapRef = useRef(null);
@@ -83,6 +84,7 @@ const MapPage = ({ navigation }) => {
 
   const fetchMarkersDataPlacesToClean = async () => {
     setIsLoading(true);
+    setTypeOfMarker("place");
     try {
       const response = await Api.get("/garbagesPlaces");
       setMarker(response.data);
@@ -95,6 +97,7 @@ const MapPage = ({ navigation }) => {
 
   const fetchMarkersDataEvents = async () => {
     setIsLoading(true);
+    setTypeOfMarker("event");
     try {
       const response = await Api.get("/events");
       setMarker(response.data);
@@ -105,9 +108,16 @@ const MapPage = ({ navigation }) => {
     }
   };
 
-  const handleAddAnEvent = (markerId) => {
-    console.log("Navigating to OnePlacePage with markerId:", markerId);
-    navigation.navigate("OnePlacePage", { markerId });
+  const handleOnePage = (markerId) => {
+    console.log("markerId", markerId);
+    if (typeOfMarker === "place") {
+      console.log("Navigating to OnePlacePage with markerId:", markerId);
+      navigation.navigate("OnePlacePage", { markerId });
+    }
+    if (typeOfMarker === "event") {
+      console.log("navigating to oneEventPage with markerId", markerId);
+      navigation.navigate("OneEventPage", { markerId });
+    }
   };
 
   return (
@@ -123,7 +133,7 @@ const MapPage = ({ navigation }) => {
                       latitude: parseFloat(marker.position.lat),
                       longitude: parseFloat(marker.position.long),
                     }}
-                    onCalloutPress={() => handleAddAnEvent(marker._id)}
+                    onCalloutPress={() => handleOnePage(marker._id)}
                   >
                     <Callout tappable tooltip>
                       {/*  style={styles.customCallout} */}
@@ -153,10 +163,7 @@ const MapPage = ({ navigation }) => {
             />
           )}
           {temporaryMarker && showForm && (
-            <Marker
-              coordinate={temporaryMarker}
-              pinColor="pink" // Different color for the temporary marker
-            />
+            <Marker coordinate={temporaryMarker} pinColor="pink" />
           )}
         </MapView>
         {showForm && (
@@ -198,7 +205,7 @@ const MapPage = ({ navigation }) => {
         <CustomButton
           title="Reset"
           icon="refresh-outline"
-          onPress={() => setMarker(null)}
+          onPress={(() => setMarker(null), () => setTypeOfMarker(null))}
           color="#8A2BE2"
         />
       </ScrollView>
@@ -347,7 +354,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1, // Ensure the button is on top
+    zIndex: 1,
   },
   addMarkerButton: {
     position: "absolute",
@@ -358,7 +365,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1, // Ensure the button is on top
+    zIndex: 1,
   },
 });
 

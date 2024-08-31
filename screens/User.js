@@ -62,7 +62,6 @@ function ProfilePage() {
   const renderProfileContent = () => (
     <View style={styles.content}>
       <View style={styles.card}>
-        <LogoutComponent />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Your ID Card</Text>
           <Text style={styles.headerSubtitle}>
@@ -77,20 +76,7 @@ function ProfilePage() {
             </Text>
           </View>
         </View>
-
-        {userDetail.role === "admin" && (
-          <TouchableOpacity
-            style={styles.dashboardButton}
-            onPress={() => navigation.navigate("Dashboard")}
-          >
-            <Text style={styles.buttonText}>Go to Dashboard</Text>
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.selectContainer}>
-          <SelectProfilePage select={select} setSelect={setSelect} />
-        </View>
-
+        <LogoutComponent />
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.updateButton}
@@ -104,6 +90,19 @@ function ProfilePage() {
           >
             <Text style={styles.buttonText}>Delete Account</Text>
           </TouchableOpacity>
+        </View>
+
+        {userDetail.role === "admin" && (
+          <TouchableOpacity
+            style={styles.dashboardButton}
+            onPress={() => navigation.navigate("Dashboard")}
+          >
+            <Text style={styles.buttonText}>Go to Dashboard</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.selectContainer}>
+          <SelectProfilePage select={select} setSelect={setSelect} />
         </View>
       </View>
     </View>
@@ -168,7 +167,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   card: {
-    backgroundColor: "white",
+    backgroundColor: "#4f46e5",
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
@@ -190,12 +189,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "white",
+    color: "#1E3A8A",
     marginBottom: 6,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: "white",
+    color: "#1E3A8A",
   },
   profileInfo: {
     alignItems: "center",
@@ -216,17 +215,18 @@ const styles = StyleSheet.create({
   subName: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#4B5563",
+    color: "#1E3A8A",
   },
   email: {
     fontSize: 16,
-    color: "#6B7280",
+    color: "#1E3A8A",
   },
   selectContainer: {
-    backgroundColor: "#93C5FD",
+    backgroundColor: "#3B82F6",
     padding: 16,
     borderRadius: 8,
     marginTop: 16,
+    flex: 1,
   },
   buttonContainer: {
     flexDirection: "row",
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   updateButton: {
     flex: 1,
-    backgroundColor: "#10B981",
+    backgroundColor: "#3B82F6",
     padding: 12,
     borderRadius: 8,
     marginRight: 8,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dashboardButton: {
-    backgroundColor: "#6366F1",
+    backgroundColor: "#3B82F6",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",

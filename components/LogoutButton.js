@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Button } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Text } from "react-native";
 import { useAuth } from "../context/AuthContextWrapper.js";
 import { useNavigation } from "@react-navigation/native";
 
@@ -14,14 +14,29 @@ function LogoutComponent() {
   }, [isLoggedIn, navigation]);
 
   if (!isLoggedIn) {
-    return null; // Prevent rendering if not logged in
+    return null;
   }
 
   return (
     <View>
-      <Button title="Logout" onPress={logout} />
+      <TouchableOpacity style={styles.button} title="Logout" onPress={logout}>
+        <Text style={styles.buttonText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: "#3B82F6",
+    padding: 11,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  buttonText: {
+    color: "white",
+  },
+});
 
 export default LogoutComponent;

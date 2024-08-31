@@ -201,6 +201,8 @@ const SelectProfilePage = ({ setSelect, select }) => {
         setItems={setItems}
         style={styles.picker}
         dropDownContainerStyle={styles.dropdownContainer}
+        zIndex={1000}
+        zIndexInverse={3000}
       />
       <FlatList
         data={dataActivity}
@@ -215,11 +217,11 @@ const SelectProfilePage = ({ setSelect, select }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
-  picker: { marginBottom: 16 },
-  dropdownContainer: { backgroundColor: "#fafafa" },
+  container: { flex: 1, padding: 16, backgroundColor: "#3B82F6" },
+  picker: { marginBottom: 16, backgroundColor: "#4f46e5" },
+  dropdownContainer: { backgroundColor: "#4f46e5" },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#4f46e5",
     padding: 16,
     marginBottom: 16,
     borderRadius: 8,

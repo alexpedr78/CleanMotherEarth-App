@@ -42,12 +42,10 @@ function SignupPage() {
       quality: 1,
     });
 
-    console.log("ImagePicker result:", result); // Log the entire result
-
+    console.log("ImagePicker result:", result);
     if (!result.canceled) {
-      // Access the URI from the first asset
       const uri = result.assets[0].uri;
-      console.log("Selected file URI:", uri); // Log the URI
+      console.log("Selected file URI:", uri);
 
       setFormState((prevState) => ({
         ...prevState,
