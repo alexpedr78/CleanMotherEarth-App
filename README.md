@@ -28,7 +28,7 @@
 
 ## **Tech Stack**
 
-- **Node.js**: Backend runtime environment.
+- **Node.js**: Backend runtime environment
 - **Express.js**: Lightweight web framework.
 - **MongoDB**: NoSQL database for flexible data storage.
 - **Mongoose**: ODM for MongoDB integration.
